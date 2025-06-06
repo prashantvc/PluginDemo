@@ -2,7 +2,7 @@ using System.ComponentModel.Composition;
 using System.Linq; // Added for Count() extension method
 using PluginDemo.Shared;
 
-namespace PluginDemo.Plugins
+namespace PluginDemo.CharacterCountPlugin
 {
   /// <summary>
   /// A sample plugin that counts characters in the input
@@ -28,7 +28,9 @@ namespace PluginDemo.Plugins
     public override string Execute(string input)
     {
       if (string.IsNullOrEmpty(input))
-        return "Input is empty";      int totalChars = input.Length;
+        return "Input is empty";
+
+      int totalChars = input.Length;
       int letters = input.Count(c => char.IsLetter(c));
       int digits = input.Count(c => char.IsDigit(c));
       int spaces = input.Count(c => char.IsWhiteSpace(c));

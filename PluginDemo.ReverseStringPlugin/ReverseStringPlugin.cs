@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.Composition;
 using PluginDemo.Shared;
 
-namespace PluginDemo.Plugins
+namespace PluginDemo.ReverseStringPlugin
 {
   /// <summary>
   /// A sample plugin that reverses the input string

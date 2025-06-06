@@ -34,30 +34,29 @@ namespace PluginDemoApp
         // Create catalog of parts from the plugin assembly
         var catalog = new AggregateCatalog();
 
-        // Add plugins from the Plugins assembly
-        var pluginsAssemblyPath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-            "PluginDemo.Plugins.dll");
+        // Add each plugin assembly
+        string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
 
-        if (File.Exists(pluginsAssemblyPath))
+        // Add plugins from individual project assemblies
+        var pluginAssemblies = new[]
         {
-          catalog.Catalogs.Add(new AssemblyCatalog(pluginsAssemblyPath));
-          Console.WriteLine($"Added plugins from: {pluginsAssemblyPath}");
-        }
-        else
-        {
-          Console.WriteLine($"Warning: Plugin assembly not found at {pluginsAssemblyPath}");
-        }
+            "PluginDemo.CharacterCountPlugin.dll",
+            "PluginDemo.ReverseStringPlugin.dll",
+            "PluginDemo.UpperCasePlugin.dll"
+        };
 
-        // Add plugins from the Plugins directory
-        string pluginsDir = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-            "Plugins");
-
-        if (Directory.Exists(pluginsDir))
+        foreach (var pluginAssembly in pluginAssemblies)
         {
-          catalog.Catalogs.Add(new DirectoryCatalog(pluginsDir));
-          Console.WriteLine($"Added plugins from directory: {pluginsDir}");
+          var pluginPath = Path.Combine(baseDir, pluginAssembly);
+          if (File.Exists(pluginPath))
+          {
+            catalog.Catalogs.Add(new AssemblyCatalog(pluginPath));
+            Console.WriteLine($"Added plugin from: {pluginPath}");
+          }
+          else
+          {
+            Console.WriteLine($"Warning: Plugin assembly not found at {pluginPath}");
+          }
         }
 
         // Create the CompositionContainer with the parts in the catalog

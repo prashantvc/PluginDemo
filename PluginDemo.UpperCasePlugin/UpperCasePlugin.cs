@@ -1,7 +1,7 @@
 using System.ComponentModel.Composition;
 using PluginDemo.Shared;
 
-namespace PluginDemo.Plugins
+namespace PluginDemo.UpperCasePlugin
 {
   /// <summary>
   /// A sample plugin that converts input to uppercase
@@ -13,6 +13,11 @@ namespace PluginDemo.Plugins
     /// Gets the name of the plugin
     /// </summary>
     public override string Name => "Upper Case Converter";
+
+    /// <summary>
+    /// Gets the version of the plugin
+    /// </summary>
+    public override string Version => "1.0.0";
 
     /// <summary>
     /// Executes the plugin operation by converting input to uppercase

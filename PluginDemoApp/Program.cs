@@ -46,9 +46,6 @@ namespace PluginDemoApp
           Console.WriteLine($"Created plugins directory: {pluginsDir}");
         }
 
-        // Try to clean up legacy plugins to avoid duplicates
-        CleanupLegacyPlugins(pluginsDir);
-
         // Load plugins from the plugins directory
         LoadPluginsFromDirectory(catalog, pluginsDir);
 
@@ -67,23 +64,6 @@ namespace PluginDemoApp
         if (ex.InnerException != null)
         {
           Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-        }
-      }
-    }
-
-    private void CleanupLegacyPlugins(string pluginsDir)
-    {
-      var oldPluginsPath = Path.Combine(pluginsDir, "PluginDemo.Plugins.dll");
-      if (File.Exists(oldPluginsPath))
-      {
-        try
-        {
-          File.Delete(oldPluginsPath);
-          Console.WriteLine("Removed old plugins assembly to avoid duplicates");
-        }
-        catch
-        {
-          Console.WriteLine("Warning: Could not remove old plugins assembly - you may see duplicate plugins");
         }
       }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+// filepath: c:\Users\PrashantCholachagudd\source\repos\PluginDemo\PluginDemoApp\Program.cs
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
@@ -31,32 +32,114 @@ namespace PluginDemoApp
     {
       try
       {
-        // Create catalog of parts from the plugin assembly
+        // Create catalog of parts for plugin discovery
         var catalog = new AggregateCatalog();
 
-        // Add each plugin assembly
+        // Application base directory
         string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
 
-        // Add plugins from individual project assemblies
-        var pluginAssemblies = new[]
-        {
-            "PluginDemo.CharacterCountPlugin.dll",
-            "PluginDemo.ReverseStringPlugin.dll",
-            "PluginDemo.UpperCasePlugin.dll"
-        };
+        // Dynamically discover and load plugin assemblies
+        Console.WriteLine("Searching for plugins...");
 
-        foreach (var pluginAssembly in pluginAssemblies)
+        // Directories to search for plugins
+        var searchDirectories = new List<string> { baseDir };
+
+        // Optional: Add a dedicated plugins directory if it exists
+        var pluginsDir = Path.Combine(baseDir, "Plugins");
+        if (Directory.Exists(pluginsDir))
         {
-          var pluginPath = Path.Combine(baseDir, pluginAssembly);
-          if (File.Exists(pluginPath))
+          searchDirectories.Add(pluginsDir);
+        }
+
+        int pluginsFound = 0;
+        HashSet<string> loadedAssemblies = new HashSet<string>();
+
+        // First remove old Plugins DLL that might cause duplicates
+        var oldPluginsPath = Path.Combine(baseDir, "Plugins", "PluginDemo.Plugins.dll");
+        if (File.Exists(oldPluginsPath))
+        {
+          try
           {
-            catalog.Catalogs.Add(new AssemblyCatalog(pluginPath));
-            Console.WriteLine($"Added plugin from: {pluginPath}");
+            // On Windows, we might not be able to delete in use files, but we can try
+            File.Delete(oldPluginsPath);
+            Console.WriteLine("Removed old plugins assembly to avoid duplicates");
           }
-          else
+          catch
           {
-            Console.WriteLine($"Warning: Plugin assembly not found at {pluginPath}");
+            Console.WriteLine("Warning: Could not remove old plugins assembly - you may see duplicate plugins");
           }
+        }
+
+        // Search in all directories
+        foreach (var directory in searchDirectories)
+        {
+          // Get all DLL files - we'll check if they contain plugins when loading
+          var pluginFiles = Directory.GetFiles(directory, "*.dll")
+              .Where(file =>
+              {
+                var fileName = Path.GetFileName(file).ToLowerInvariant();
+                // Exclude the shared library, main app DLL, and system DLLs
+                return !fileName.EndsWith("plugindemo.shared.dll") &&
+                       !fileName.Equals("plugindemoapp.dll") &&
+                       !fileName.StartsWith("system.") &&
+                       !fileName.StartsWith("microsoft.");
+              });
+
+          if (!pluginFiles.Any())
+          {
+            Console.WriteLine($"No plugin assemblies found in: {directory}");
+            continue;
+          }
+
+          foreach (var pluginPath in pluginFiles)
+          {
+            // Skip already loaded assemblies (by full path to avoid duplicates)
+            if (!loadedAssemblies.Add(pluginPath.ToLowerInvariant()))
+            {
+              Console.WriteLine($"Skipping duplicate: {Path.GetFileName(pluginPath)}");
+              continue;
+            }
+
+            try
+            {
+              // Load assembly to check if it contains any IPlugin types before adding to catalog
+              var assembly = Assembly.LoadFrom(pluginPath);
+
+              // Check if this assembly contains any types implementing IPlugin
+              bool hasPlugins = assembly.GetExportedTypes()
+                  .Any(type =>
+                      typeof(IPlugin).IsAssignableFrom(type) &&
+                      !type.IsAbstract &&
+                      type.IsClass);
+
+              if (hasPlugins)
+              {
+                catalog.Catalogs.Add(new AssemblyCatalog(assembly));
+                Console.WriteLine($"Added plugin assembly: {Path.GetFileName(pluginPath)}");
+                pluginsFound++;
+              }
+            }
+            catch (ReflectionTypeLoadException)
+            {
+              // This is normal for non-plugin assemblies, only show for verbose logging
+              Console.WriteLine($"Skipping non-plugin assembly: {Path.GetFileName(pluginPath)}");
+            }
+            catch (BadImageFormatException)
+            {
+              // This happens with native DLLs and is normal
+              // Just skip these files silently
+            }
+            catch (Exception ex)
+            {
+              // Show error message with details
+              Console.WriteLine($"Error examining {Path.GetFileName(pluginPath)}: {ex.Message}");
+            }
+          }
+        }
+
+        if (pluginsFound == 0)
+        {
+          Console.WriteLine("Warning: No plugin assemblies were successfully loaded.");
         }
 
         // Create the CompositionContainer with the parts in the catalog
@@ -64,6 +147,20 @@ namespace PluginDemoApp
 
         // Fill the imports of this object
         container.ComposeParts(this);
+
+        // Remove duplicate plugins by type name
+        if (Plugins != null)
+        {
+          var uniquePlugins = Plugins.GroupBy(p => p.GetType().FullName)
+                                    .Select(g => g.First())
+                                    .ToList();
+
+          if (uniquePlugins.Count < Plugins.Count())
+          {
+            Console.WriteLine($"Removed {Plugins.Count() - uniquePlugins.Count} duplicate plugins");
+            Plugins = uniquePlugins;
+          }
+        }
 
         Console.WriteLine($"\nDiscovered {Plugins?.Count() ?? 0} plugins\n");
       }

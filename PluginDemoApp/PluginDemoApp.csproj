@@ -1,11 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\PluginDemo.Shared\PluginDemo.Shared.csproj" />
-    <ProjectReference
-      Include="..\PluginDemo.CharacterCountPlugin\PluginDemo.CharacterCountPlugin.csproj" />
-    <ProjectReference
-      Include="..\PluginDemo.ReverseStringPlugin\PluginDemo.ReverseStringPlugin.csproj" />
-    <ProjectReference Include="..\PluginDemo.UpperCasePlugin\PluginDemo.UpperCasePlugin.csproj" />
   </ItemGroup>
 
   <ItemGroup>

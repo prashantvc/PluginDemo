@@ -70,47 +70,53 @@ namespace PluginDemoApp
 
     private void LoadPluginsFromDirectory(AggregateCatalog catalog, string directory)
     {
-      var pluginFiles = Directory.GetFiles(directory, "PluginDemo.*.dll");
-
-      if (!pluginFiles.Any())
+      // Look for plugin subdirectories
+      var pluginSubDirs = Directory.GetDirectories(directory);
+      
+      if (!pluginSubDirs.Any())
       {
-        Console.WriteLine($"No plugin assemblies found in: {directory}");
+        Console.WriteLine($"No plugin subdirectories found in: {directory}");
         return;
       }
 
       var loadedAssemblies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
       int pluginsFound = 0;
 
-      foreach (var pluginPath in pluginFiles)
+      foreach (var pluginSubDir in pluginSubDirs)
       {
-        // Skip already loaded assemblies
-        if (!loadedAssemblies.Add(pluginPath))
+        var pluginFiles = Directory.GetFiles(pluginSubDir, "PluginDemo.*.dll");
+        
+        foreach (var pluginPath in pluginFiles)
         {
-          Console.WriteLine($"Skipping duplicate: {Path.GetFileName(pluginPath)}");
-          continue;
-        }
+          // Skip already loaded assemblies
+          if (!loadedAssemblies.Add(pluginPath))
+          {
+            Console.WriteLine($"Skipping duplicate: {Path.GetFileName(pluginPath)}");
+            continue;
+          }
 
-        try
-        {
-          // Load assembly
-          var assembly = Assembly.LoadFrom(pluginPath);
+          try
+          {
+            // Load assembly from the plugin's subdirectory
+            var assembly = Assembly.LoadFrom(pluginPath);
 
-          // Add to catalog - no need to filter by name since we're already targeting PluginDemo.*.dll
-          catalog.Catalogs.Add(new AssemblyCatalog(assembly));
-          Console.WriteLine($"Added plugin assembly: {Path.GetFileName(pluginPath)}");
-          pluginsFound++;
-        }
-        catch (ReflectionTypeLoadException)
-        {
-          Console.WriteLine($"Skipping non-plugin assembly: {Path.GetFileName(pluginPath)}");
-        }
-        catch (BadImageFormatException)
-        {
-          // Skip native DLLs silently
-        }
-        catch (Exception ex)
-        {
-          Console.WriteLine($"Error examining {Path.GetFileName(pluginPath)}: {ex.Message}");
+            // Add to catalog
+            catalog.Catalogs.Add(new AssemblyCatalog(assembly));
+            Console.WriteLine($"Added plugin assembly: {Path.GetFileName(pluginPath)} from {Path.GetFileName(pluginSubDir)}");
+            pluginsFound++;
+          }
+          catch (ReflectionTypeLoadException)
+          {
+            Console.WriteLine($"Skipping non-plugin assembly: {Path.GetFileName(pluginPath)}");
+          }
+          catch (BadImageFormatException)
+          {
+            // Skip native DLLs silently
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"Error examining {Path.GetFileName(pluginPath)}: {ex.Message}");
+          }
         }
       }
 

@@ -72,7 +72,7 @@ namespace PluginDemoApp
     {
       // Look for plugin subdirectories
       var pluginSubDirs = Directory.GetDirectories(directory);
-      
+
       if (!pluginSubDirs.Any())
       {
         Console.WriteLine($"No plugin subdirectories found in: {directory}");
@@ -85,7 +85,7 @@ namespace PluginDemoApp
       foreach (var pluginSubDir in pluginSubDirs)
       {
         var pluginFiles = Directory.GetFiles(pluginSubDir, "PluginDemo.*.dll");
-        
+
         foreach (var pluginPath in pluginFiles)
         {
           // Skip already loaded assemblies
@@ -189,8 +189,24 @@ namespace PluginDemoApp
 
       var plugin = Plugins.ElementAt(pluginNumber - 1);
       Console.WriteLine($"\nSelected plugin: {plugin.Name} (v{plugin.Version})");
-      Console.WriteLine("Enter text to process (or empty line to cancel): ");
 
+      // Special handling for SignalR plugin - auto-execute without input
+      if (plugin.Name.Contains("SignalR"))
+      {
+        try
+        {
+          string result = plugin.Execute("auto-monitor");
+          Console.WriteLine($"\nResult: {result}");
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Error executing plugin: {ex.Message}");
+        }
+        return;
+      }
+
+      // Standard behavior for other plugins
+      Console.WriteLine("Enter text to process (or empty line to cancel): ");
       var textInput = Console.ReadLine();
       if (string.IsNullOrWhiteSpace(textInput))
         return;

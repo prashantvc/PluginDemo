@@ -2,7 +2,8 @@
 $pluginProjects = @(
     "PluginDemo.CharacterCountPlugin",
     "PluginDemo.ReverseStringPlugin",
-    "PluginDemo.UpperCasePlugin"
+    "PluginDemo.UpperCasePlugin",
+    "PluginDemo.SignalRPlugin"
 )
 $pluginsDir = ".\PluginDemoApp\bin\Debug\net9.0\Plugins"
 
